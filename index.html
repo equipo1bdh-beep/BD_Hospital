@@ -376,39 +376,21 @@
     </footer>
 
     <script>
-        const especialidades = [
-            { id: 1, nombre: "Cardiología", precio: 900 },
-            { id: 2, nombre: "Dermatología", precio: 750 },
-            { id: 3, nombre: "Ginecología", precio: 800 },
-            { id: 4, nombre: "Medicina General", precio: 500 },
-            { id: 5, nombre: "Nefrología", precio: 950 },
-            { id: 6, nombre: "Nutriología", precio: 650 },
-            { id: 7, nombre: "Oftalmología", precio: 850 },
-            { id: 8, nombre: "Oncología", precio: 1200 },
-            { id: 9, nombre: "Ortopedia", precio: 950 },
-            { id: 10, nombre: "Pediatría", precio: 700 }
-        ];
-
-        const doctores = [
-            { id: 1, nombre: "Dr. Alejandro Pérez", especialidadId: 1, consultorio: "A-201" },
-            { id: 2, nombre: "Dra. Sofia Herrera", especialidadId: 1, consultorio: "A-202" },
-            { id: 3, nombre: "Dr. Eduardo Luna", especialidadId: 2, consultorio: "B-101" },
-            { id: 4, nombre: "Dra. Michelle Tolentino", especialidadId: 2, consultorio: "B-105" },
-            { id: 5, nombre: "Dra. Fernanda Ruiz", especialidadId: 3, consultorio: "C-102" },
-            { id: 6, nombre: "Dr. Marco León", especialidadId: 4, consultorio: "C-201" },
-            { id: 7, nombre: "Dr. Iván Castillo", especialidadId: 5, consultorio: "D-210" },
-            { id: 8, nombre: "Dra. Paola Méndez", especialidadId: 6, consultorio: "D-110" },
-            { id: 9, nombre: "Dr. Luis Ramírez", especialidadId: 7, consultorio: "E-120" },
-            { id: 10, nombre: "Dra. Andrea Soto", especialidadId: 8, consultorio: "F-301" },
-            { id: 11, nombre: "Dr. Jorge Navarro", especialidadId: 9, consultorio: "G-115" },
-            { id: 12, nombre: "Dra. Karla Campos", especialidadId: 10, consultorio: "H-104" }
-        ];
-
-        const horariosBase = ["09:00", "10:00", "11:00", "12:00", "16:00", "17:00"];
-
-        let pacientesRegistrados = [];
+        // ── Estado global ─────────────────────────────────────────
+        let especialidades    = [];   // se llena desde BD
+        let doctores          = [];   // se llena desde BD
         let pacienteAutenticado = null;
-        let citasGeneradas = [];
+        let citasGeneradas    = [];   // se llena desde BD
+        const API = "api/";           // ruta base a los PHP
+
+        // ── Utilidad fetch JSON ───────────────────────────────────
+        async function api(endpoint, opts = {}) {
+            const r = await fetch(API + endpoint, {
+                headers: { "Content-Type": "application/json" },
+                ...opts
+            });
+            return r.json();
+        }
 
         function navigate(viewId, scrollToId = null) {
             const targetSection = document.getElementById(viewId);
@@ -535,201 +517,121 @@
             document.getElementById("resumen-consultorio").textContent = doctor ? doctor.consultorio : "Por definir";
         }
 
-        
-async function registrarPaciente() {
+        // ── REGISTRO ──────────────────────────────────────────────
+        async function registrarPaciente() {
+            const pass  = document.getElementById("reg-contrasena").value;
+            const pass2 = document.getElementById("reg-confirmar-contrasena").value;
+            if (pass !== pass2) { alert("Las contraseñas no coinciden."); return; }
 
-    const datos = new FormData();
-
-    datos.append("nombres", document.getElementById("reg-nombres").value);
-    datos.append("ap_paterno", document.getElementById("reg-ap-paterno").value);
-    datos.append("ap_materno", document.getElementById("reg-ap-materno").value);
-    datos.append("fecha_nacimiento", document.getElementById("reg-fecha-nac").value);
-    datos.append("curp", document.getElementById("reg-curp").value);
-    datos.append("genero", document.getElementById("reg-genero").value);
-    datos.append("tipo_sangre", document.getElementById("reg-tipo-sangre").value);
-    datos.append("contrasena", document.getElementById("reg-contrasena").value);
-
-    const respuesta = await fetch("registrar.php", {
-        method: "POST",
-        body: datos
-    });
-
-    const resultado = await respuesta.text();
-
-    alert(resultado);
-
-    document.getElementById("form-registro").reset();
-}
-
-
-        
-async function iniciarSesion() {
-
-    const datos = new FormData();
-
-    datos.append("curp", document.getElementById("login-correo").value);
-    datos.append("contrasena", document.getElementById("login-contrasena").value);
-
-    const respuesta = await fetch("login.php", {
-        method: "POST",
-        body: datos
-    });
-
-    const resultado = await respuesta.json();
-
-    if (resultado.success) {
-
-        pacienteAutenticado = {
-            idPaciente: resultado.id,
-            nombres: resultado.nombre
-        };
-
-        actualizarUIAutenticacion();
-
-        alert("Inicio de sesión exitoso");
-
-        navigate("portal-paciente");
-
-    } else {
-
-        alert("CURP o contraseña incorrectos");
-
-    }
-}
-
-
-        function cerrarSesion() {
-            pacienteAutenticado = null;
-            actualizarUIAutenticacion();
-            navigate("home");
-            alert("Sesión cerrada correctamente.");
+            const res = await api("registro.php", {
+                method: "POST",
+                body: JSON.stringify({
+                    nombres:    document.getElementById("reg-nombres").value,
+                    apPaterno:  document.getElementById("reg-ap-paterno").value,
+                    apMaterno:  document.getElementById("reg-ap-materno").value,
+                    fechaNac:   document.getElementById("reg-fecha-nac").value,
+                    curp:       document.getElementById("reg-curp").value,
+                    genero:     document.getElementById("reg-genero").value,
+                    tipoSangre: document.getElementById("reg-tipo-sangre").value,
+                    telefono:   document.getElementById("reg-telefono").value,
+                    correo:     document.getElementById("reg-correo").value,
+                    contrasena: pass,
+                })
+            });
+            alert(res.msg);
+            if (res.ok) { document.getElementById("form-registro").reset(); navigate("login"); }
         }
 
+        // ── LOGIN ─────────────────────────────────────────────────
+        async function iniciarSesion() {
+            const res = await api("login.php", {
+                method: "POST",
+                body: JSON.stringify({
+                    correo:     document.getElementById("login-correo").value.trim(),
+                    contrasena: document.getElementById("login-contrasena").value,
+                    rol:        document.getElementById("login-rol").value,
+                })
+            });
+            if (!res.ok) { alert(res.msg); return; }
+
+            pacienteAutenticado = res.data;
+            actualizarUIAutenticacion();
+            await cargarMisCitas();
+            navigate("portal-paciente");
+        }
+
+        // ── LOGOUT ────────────────────────────────────────────────
+        async function cerrarSesion() {
+            await api("logout.php");
+            pacienteAutenticado = null;
+            citasGeneradas = [];
+            actualizarUIAutenticacion();
+            navigate("home");
+        }
+
+        // ── UI AUTENTICACIÓN ──────────────────────────────────────
         function actualizarUIAutenticacion() {
-            const btnLogout = document.getElementById("btn-logout");
-            const btnLogoutMobile = document.getElementById("btn-logout-mobile");
-            const nombreAgenda = document.getElementById("nombre-paciente-agenda");
-            const nombrePortal = document.getElementById("nombre-portal-paciente");
-            const correoPortal = document.getElementById("correo-portal-paciente");
-            const avatar = document.getElementById("avatar-paciente");
+            const loggedIn = !!pacienteAutenticado;
+            document.getElementById("btn-logout").classList.toggle("hidden", !loggedIn);
+            document.getElementById("btn-logout-mobile").classList.toggle("hidden", !loggedIn);
 
-            if (pacienteAutenticado) {
-                btnLogout.classList.remove("hidden");
-                btnLogoutMobile.classList.remove("hidden");
-
-                const nombreCompleto = `${pacienteAutenticado.nombres} ${pacienteAutenticado.apPaterno} ${pacienteAutenticado.apMaterno}`;
-                nombreAgenda.textContent = nombreCompleto;
-                nombrePortal.textContent = nombreCompleto;
-                correoPortal.textContent = pacienteAutenticado.correo;
-                avatar.textContent = `${pacienteAutenticado.nombres[0] || ''}${pacienteAutenticado.apPaterno[0] || ''}`.toUpperCase();
+            if (loggedIn) {
+                const n = pacienteAutenticado.nombre;
+                document.getElementById("nombre-paciente-agenda").textContent = n;
+                document.getElementById("nombre-portal-paciente").textContent = n;
+                document.getElementById("correo-portal-paciente").textContent = pacienteAutenticado.correo;
+                document.getElementById("avatar-paciente").textContent = n.split(" ").slice(0,2).map(x=>x[0]).join("").toUpperCase();
             } else {
-                btnLogout.classList.add("hidden");
-                btnLogoutMobile.classList.add("hidden");
-                nombreAgenda.textContent = "Sin sesión";
-                nombrePortal.textContent = "Sin sesión iniciada";
-                correoPortal.textContent = "Inicia sesión para consultar tu historial.";
-                avatar.textContent = "--";
+                document.getElementById("nombre-paciente-agenda").textContent = "Sin sesión";
+                document.getElementById("nombre-portal-paciente").textContent = "Sin sesión iniciada";
+                document.getElementById("correo-portal-paciente").textContent = "Inicia sesión para consultar tu historial.";
+                document.getElementById("avatar-paciente").textContent = "--";
                 renderTablaCitas();
             }
         }
 
-        function irALogin() {
-            navigate("login");
-        }
+        function irALogin() { navigate("login"); }
 
         function irAAgendar() {
-            if (!pacienteAutenticado) {
-                alert("Debes registrarte o iniciar sesión como paciente antes de agendar una cita.");
-                navigate("login");
-                return;
-            }
-
-            document.getElementById("nombre-paciente-agenda").textContent =
-                `${pacienteAutenticado.nombres} ${pacienteAutenticado.apPaterno} ${pacienteAutenticado.apMaterno}`;
+            if (!pacienteAutenticado) { alert("Debes iniciar sesión antes de agendar."); navigate("login"); return; }
+            document.getElementById("nombre-paciente-agenda").textContent = pacienteAutenticado.nombre;
             navigate("agendar-cita");
         }
 
-        function preseleccionarDoctor(especialidadId, doctorId) {
-            if (!pacienteAutenticado) {
-                alert("Debes iniciar sesión como paciente para continuar con el agendamiento.");
-                navigate("login");
-                return;
-            }
-
-            navigate('agendar-cita');
+        async function preseleccionarDoctor(especialidadId, doctorId) {
+            if (!pacienteAutenticado) { alert("Inicia sesión para agendar."); navigate("login"); return; }
+            navigate("agendar-cita");
             document.getElementById("especialidad").value = especialidadId;
-            cargarDoctores();
+            await cargarDoctores();
             document.getElementById("doctor").value = doctorId;
             actualizarResumen();
-            cargarHorarios();
+            await cargarHorarios();
         }
 
-        function generarFolio() {
-            return "CIT-" + String(citasGeneradas.length + 1).padStart(3, "0");
-        }
+        // ── AGENDAR CITA ──────────────────────────────────────────
+        async function procesarCita() {
+            if (!pacienteAutenticado) { alert("Sin sesión."); navigate("login"); return; }
 
-        function generarLineaPago() {
-            return "LP-" + Math.random().toString(36).substring(2, 10).toUpperCase();
-        }
+            const idEsp    = parseInt(document.getElementById("especialidad").value);
+            const idDoctor = parseInt(document.getElementById("doctor").value);
+            const fecha    = document.getElementById("fecha-cita").value;
+            const hora     = document.getElementById("hora-cita").value;
 
-        function procesarCita() {
-            if (!pacienteAutenticado) {
-                alert("No puedes agendar una cita sin iniciar sesión.");
-                navigate("login");
-                return;
-            }
+            if (!idEsp || !idDoctor || !fecha || !hora) { alert("Completa todos los campos."); return; }
 
-            const especialidadId = parseInt(document.getElementById("especialidad").value);
-            const doctorId = parseInt(document.getElementById("doctor").value);
-            const fecha = document.getElementById("fecha-cita").value;
-            const hora = document.getElementById("hora-cita").value;
+            const diff = (new Date(`${fecha}T${hora}:00`) - new Date()) / 36e5;
+            if (diff < 48)  { alert("Mínimo 48 horas de anticipación."); return; }
+            if (diff > 2160){ alert("Máximo 90 días de anticipación."); return; }
 
-            if (!especialidadId || !doctorId || !fecha || !hora) {
-                alert("Completa todos los campos obligatorios.");
-                return;
-            }
+            const res = await api("agendar.php", {
+                method: "POST",
+                body: JSON.stringify({ idEsp, idDoctor, fecha, hora })
+            });
+            if (!res.ok) { alert(res.msg); return; }
 
-            const ahora = new Date();
-            const fechaHoraCita = new Date(`${fecha}T${hora}:00`);
-            const diferenciaHoras = (fechaHoraCita - ahora) / (1000 * 60 * 60);
-
-            if (diferenciaHoras < 48) {
-                alert("No es posible agendar una cita con menos de 48 horas de anticipación.");
-                return;
-            }
-
-            if (diferenciaHoras > 24 * 90) {
-                alert("No es posible agendar una cita con más de 3 meses de anticipación.");
-                return;
-            }
-
-            const yaTieneActiva = citasGeneradas.some(c =>
-                c.idPaciente === pacienteAutenticado.idPaciente &&
-                c.doctorId === doctorId &&
-                c.fecha === fecha &&
-                c.hora === hora &&
-                (c.estatus === "Pendiente de pago" || c.estatus === "Pagada pendiente por atender")
-            );
-
-            if (yaTieneActiva) {
-                alert("Ya tienes una cita activa con ese doctor en ese mismo horario.");
-                return;
-            }
-
-            const doctorOcupado = citasGeneradas.some(c =>
-                c.doctorId === doctorId &&
-                c.fecha === fecha &&
-                c.hora === hora &&
-                (c.estatus === "Pendiente de pago" || c.estatus === "Pagada pendiente por atender")
-            );
-
-            if (doctorOcupado) {
-                alert("El doctor ya tiene una cita en ese horario.");
-                return;
-            }
-
-            const especialidad = especialidades.find(e => e.id === especialidadId);
-            const doctor = doctores.find(d => d.id === doctorId);
+            const cita = res.data;
+            const esp  = especialidades.find(e => e.id === idEsp);
+            const doc  = doctores.find(d => d.id === idDoctor);
 
             const nuevaCita = {
                 idPaciente: pacienteAutenticado.idPaciente,
@@ -740,109 +642,151 @@ async function iniciarSesion() {
                 doctor: doctor.nombre,
                 fecha,
                 hora,
-                consultorio: doctor.consultorio,
-                monto: especialidad.precio,
-                lineaPago: generarLineaPago(),
-                fechaLimite: "8 horas posteriores al registro",
-                estatus: "Pendiente de pago"
+                consultorio: doc ? doc.consultorio : "N/A",
+                monto: cita.monto,
+                folio: cita.folio,
+                fechaLimite: cita.fechaLimite,
+                estatus: "Pendiente de pago",
+                especialidad: esp ? esp.nombre : "",
+                doctor: doc ? doc.nombre : "",
+                fecha, hora,
+                paciente: pacienteAutenticado.nombre
             };
 
-            citasGeneradas.push(nuevaCita);
-            renderTablaCitas();
-            renderComprobante(nuevaCita);
+            await cargarMisCitas();
+            renderComprobante(obj);
             navigate("comprobante");
         }
 
         function renderComprobante(cita) {
-            const contenedor = document.getElementById("comprobante-contenido");
-            contenedor.innerHTML = `
+            const card = (label, val) => `
                 <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5">
-                    <p class="text-xs uppercase tracking-wide text-slate-500 font-bold">Folio de cita</p>
-                    <p class="text-lg font-bold text-slate-900 mt-1">${cita.folio}</p>
-                </div>
-                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5">
-                    <p class="text-xs uppercase tracking-wide text-slate-500 font-bold">Línea de pago</p>
-                    <p class="text-lg font-bold text-slate-900 mt-1">${cita.lineaPago}</p>
-                </div>
-                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5">
-                    <p class="text-xs uppercase tracking-wide text-slate-500 font-bold">Paciente</p>
-                    <p class="text-lg font-bold text-slate-900 mt-1">${cita.paciente}</p>
-                </div>
-                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5">
-                    <p class="text-xs uppercase tracking-wide text-slate-500 font-bold">Especialidad</p>
-                    <p class="text-lg font-bold text-slate-900 mt-1">${cita.especialidad}</p>
-                </div>
-                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5">
-                    <p class="text-xs uppercase tracking-wide text-slate-500 font-bold">Doctor</p>
-                    <p class="text-lg font-bold text-slate-900 mt-1">${cita.doctor}</p>
-                </div>
-                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5">
-                    <p class="text-xs uppercase tracking-wide text-slate-500 font-bold">Consultorio</p>
-                    <p class="text-lg font-bold text-slate-900 mt-1">${cita.consultorio}</p>
-                </div>
-                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5">
-                    <p class="text-xs uppercase tracking-wide text-slate-500 font-bold">Fecha</p>
-                    <p class="text-lg font-bold text-slate-900 mt-1">${cita.fecha}</p>
-                </div>
-                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5">
-                    <p class="text-xs uppercase tracking-wide text-slate-500 font-bold">Hora</p>
-                    <p class="text-lg font-bold text-slate-900 mt-1">${cita.hora}</p>
-                </div>
-                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5 md:col-span-2">
+                    <p class="text-xs uppercase tracking-wide text-slate-500 font-bold">${label}</p>
+                    <p class="text-lg font-bold text-slate-900 mt-1">${val}</p>
+                </div>`;
+            document.getElementById("comprobante-contenido").innerHTML =
+                card("Folio de cita", cita.folio) +
+                card("Paciente", cita.paciente) +
+                card("Especialidad", cita.especialidad) +
+                card("Doctor", cita.doctor) +
+                card("Consultorio", cita.consultorio) +
+                card("Fecha", cita.fecha) +
+                card("Hora", cita.hora) +
+                `<div class="bg-slate-50 border border-slate-200 rounded-2xl p-5 md:col-span-2">
                     <p class="text-xs uppercase tracking-wide text-slate-500 font-bold">Pago y política</p>
                     <p class="text-base text-slate-700 mt-1">
-                        Monto: <span class="font-bold">$${cita.monto.toFixed(2)} MXN</span><br>
+                        Monto: <span class="font-bold">$${parseFloat(cita.monto).toFixed(2)} MXN</span><br>
                         Límite de pago: ${cita.fechaLimite}<br>
                         Cancelación: 100% con 48h o más, 50% con 24h, 0% con menos de 24h.
                     </p>
-                </div>
-            `;
+                </div>`;
+        }
+
+        // ── MIS CITAS (desde BD) ──────────────────────────────────
+        async function cargarMisCitas() {
+            const res = await api("mis_citas.php");
+            citasGeneradas = res.ok ? res.data : [];
+            renderTablaCitas();
         }
 
         function renderTablaCitas() {
             const tabla = document.getElementById("tabla-citas");
-
             if (!pacienteAutenticado) {
-                tabla.innerHTML = `
-                    <tr>
-                        <td class="px-4 py-4 text-sm text-slate-500" colspan="7">Debes iniciar sesión para visualizar tus citas.</td>
-                    </tr>
-                `;
+                tabla.innerHTML = `<tr><td class="px-4 py-4 text-sm text-slate-500" colspan="7">Debes iniciar sesión.</td></tr>`;
                 return;
             }
-
-            const citasPaciente = citasGeneradas.filter(c => c.idPaciente === pacienteAutenticado.idPaciente);
-
-            if (citasPaciente.length === 0) {
-                tabla.innerHTML = `
-                    <tr>
-                        <td class="px-4 py-4 text-sm text-slate-500" colspan="7">No hay citas registradas para esta cuenta.</td>
-                    </tr>
-                `;
+            if (!citasGeneradas.length) {
+                tabla.innerHTML = `<tr><td class="px-4 py-4 text-sm text-slate-500" colspan="7">No hay citas registradas.</td></tr>`;
                 return;
             }
-
-            tabla.innerHTML = citasPaciente.map(cita => `
-                <tr>
-                    <td class="px-4 py-4 text-sm font-bold text-slate-900">${cita.folio}</td>
-                    <td class="px-4 py-4 text-sm">${cita.especialidad}</td>
-                    <td class="px-4 py-4 text-sm">${cita.doctor}</td>
-                    <td class="px-4 py-4 text-sm">${cita.fecha}<br><span class="text-slate-500">${cita.hora}</span></td>
-                    <td class="px-4 py-4 text-sm">${cita.consultorio}</td>
-                    <td class="px-4 py-4 text-sm">$${cita.monto.toFixed(2)}</td>
+            tabla.innerHTML = citasGeneradas.map(c => {
+                const colorEstatus = c.estatus === "Confirmada"
+                    ? "bg-green-100 text-green-800"
+                    : "bg-amber-100 text-amber-800";
+                return `<tr>
+                    <td class="px-4 py-4 text-sm font-bold text-slate-900">${c.folio}</td>
+                    <td class="px-4 py-4 text-sm">${c.especialidad}</td>
+                    <td class="px-4 py-4 text-sm">${c.doctor}</td>
+                    <td class="px-4 py-4 text-sm">${c.fecha}<br><span class="text-slate-500">${c.hora}</span></td>
+                    <td class="px-4 py-4 text-sm">${c.consultorio}</td>
+                    <td class="px-4 py-4 text-sm">$${parseFloat(c.monto).toFixed(2)}</td>
                     <td class="px-4 py-4">
-                        <span class="px-3 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-800">${cita.estatus}</span>
+                        <span class="px-3 py-1 text-xs font-semibold rounded-full ${colorEstatus}">${c.estatus}</span>
                     </td>
-                </tr>
-            `).join("");
+                </tr>`;
+            }).join("");
         }
 
-        document.addEventListener("DOMContentLoaded", () => {
+        // ── CATÁLOGOS DESDE BD ────────────────────────────────────
+        async function cargarEspecialidades() {
+            const res = await api("catalogo.php?tipo=especialidades");
+            especialidades = res.ok ? res.data : [];
+            const sel = document.getElementById("especialidad");
+            sel.innerHTML = `<option value="">Seleccione una especialidad</option>`;
+            especialidades.forEach(e => {
+                sel.innerHTML += `<option value="${e.id}">${e.nombre}</option>`;
+            });
+        }
+
+        async function cargarDoctores() {
+            const idEsp = document.getElementById("especialidad").value;
+            const res = await api(`catalogo.php?tipo=doctores&especialidad=${idEsp}`);
+            doctores = res.ok ? res.data : [];
+            const sel = document.getElementById("doctor");
+            sel.innerHTML = `<option value="">Seleccione un doctor</option>`;
+            doctores.forEach(d => {
+                sel.innerHTML += `<option value="${d.id}">${d.nombre}</option>`;
+            });
+            document.getElementById("hora-cita").innerHTML = `<option value="">Seleccione primero doctor y fecha</option>`;
+            actualizarResumen();
+        }
+
+        async function cargarHorarios() {
+            const idDoc = document.getElementById("doctor").value;
+            const fecha = document.getElementById("fecha-cita").value;
+            const sel = document.getElementById("hora-cita");
+            if (!idDoc || !fecha) { sel.innerHTML = `<option value="">Seleccione primero doctor y fecha</option>`; return; }
+            const res = await api(`catalogo.php?tipo=horarios&doctor=${idDoc}&fecha=${fecha}`);
+            const horas = res.ok ? res.data : [];
+            sel.innerHTML = horas.length
+                ? horas.map(h => `<option value="${h}">${h}</option>`).join("")
+                : `<option value="">Sin horarios disponibles</option>`;
+            actualizarResumen();
+        }
+
+        function renderDoctorCards() {
+            // Se recarga con datos de BD al cargar especialidades
+            const container = document.getElementById("doctor-cards");
+            container.innerHTML = `<p class="text-slate-400 col-span-4 text-center">Cargando directorio...</p>`;
+            api("catalogo.php?tipo=especialidades").then(res => {
+                if (!res.ok) return;
+                api("catalogo.php?tipo=doctores&especialidad=0").then(() => {}); // precarga silenciosa
+                // Mostrar cards con datos disponibles (usaremos los datos de especialidades)
+                const esps = res.data;
+                container.innerHTML = "";
+                esps.slice(0, 8).forEach(e => {
+                    container.innerHTML += `
+                        <div class="bg-slate-50 rounded-2xl p-6 border border-slate-100 shadow-sm hover:shadow-xl transition transform hover:-translate-y-1">
+                            <div class="w-20 h-20 bg-escom-100 rounded-full mx-auto mb-4 border-4 border-white shadow-inner flex items-center justify-center text-escom-600 font-bold text-2xl">
+                                ${e.nombre[0]}
+                            </div>
+                            <h3 class="text-lg font-bold text-center text-slate-900">${e.nombre}</h3>
+                            <p class="text-sm text-center text-escom-600 font-medium mb-4">$${parseFloat(e.precio).toFixed(2)} MXN</p>
+                            <button onclick="irAAgendar()" class="w-full bg-white border-2 border-escom-100 text-escom-600 hover:bg-escom-50 font-semibold py-2 rounded-xl text-sm transition">
+                                Agendar
+                            </button>
+                        </div>`;
+                });
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            await cargarEspecialidades();
             renderDoctorCards();
-            cargarEspecialidades();
             configurarFechaMinMax();
-            document.getElementById("especialidad").addEventListener("change", actualizarResumen);
-            document.getElementById("doctor").addEventListener("change", actualizarResumen);
+            document.getElementById("especialidad").addEventListener("change", cargarDoctores);
+            document.getElementById("doctor").addEventListener("change", cargarHorarios);
+            document.getElementById("fecha-cita").addEventListener("change", cargarHorarios);
             actualizarUIAutenticacion();
         });
     </script>
