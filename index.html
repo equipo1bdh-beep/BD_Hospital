@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hospital ESCOM - Sistema de Gestión 26-2</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        escom: { 50: '#f0f9ff', 100: '#e0f2fe', 600: '#0284c7', 800: '#075985', 900: '#0c4a6e' },
+                        salud: { 400: '#34d399', 500: '#10b981', 600: '#059669' }
+                    },
+                    fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        .fade-in { animation: fadeIn 0.35s ease-in-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .view-section { display: none; }
+        .view-section.active { display: block; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col">
+
+    <div class="bg-rose-600 text-white text-sm font-semibold py-2 px-4 flex justify-between items-center z-50 relative">
+        <div class="flex items-center gap-2">
+            <svg class="w-4 h-4 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z"></path>
+            </svg>
+            <span>URGENCIAS 24/7: 800-HOSP-ESCOM</span>
+        </div>
+        <div class="hidden md:flex gap-4 text-rose-100">
+            <span>Ubicación: Ciudad de México</span>
+            <span>|</span>
+            <button onclick="irALogin()" class="hover:text-white transition">Iniciar sesión</button>
+        </div>
+    </div>
+
+    <nav class="bg-white shadow-sm sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-20 items-center">
+                <div class="flex-shrink-0 flex items-center cursor-pointer" onclick="navigate('home')">
+                    <div class="w-10 h-10 bg-escom-800 rounded-lg flex items-center justify-center text-white font-bold text-xl mr-3 shadow-md">H</div>
+                    <span class="font-bold text-2xl tracking-tight text-escom-900">Hospital<span class="text-escom-600">ESCOM</span></span>
+                </div>
+
+                <div class="hidden md:flex space-x-8 items-center">
+                    <button onclick="navigate('home', 'seccion-directorio')" class="text-slate-500 hover:text-escom-600 font-medium transition">Directorio Médico</button>
+                    <button onclick="navigate('registro')" class="text-slate-500 hover:text-escom-600 font-medium transition">Registro</button>
+                    <button onclick="irALogin()" class="text-slate-500 hover:text-escom-600 font-medium transition">Login</button>
+                    <button onclick="irAAgendar()" class="bg-escom-600 hover:bg-escom-800 text-white px-6 py-2.5 rounded-full font-semibold shadow-lg shadow-escom-600/30 transition transform hover:-translate-y-0.5">
+                        Agendar Cita
+                    </button>
+                    <button id="btn-logout" onclick="cerrarSesion()" class="hidden bg-slate-900 hover:bg-slate-700 text-white px-5 py-2.5 rounded-full font-semibold transition">
+                        Cerrar sesión
+                    </button>
+                </div>
+
+                <div class="md:hidden flex items-center">
+                    <button onclick="toggleMobileMenu()" class="text-slate-500 hover:text-escom-600 focus:outline-none">
+                        <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-slate-100 px-4 pt-2 pb-4 space-y-1 shadow-lg absolute w-full">
+            <button onclick="navigate('home', 'seccion-directorio'); toggleMobileMenu();" class="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-escom-600 hover:bg-slate-50">Directorio Médico</button>
+            <button onclick="navigate('registro'); toggleMobileMenu();" class="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-escom-600 hover:bg-slate-50">Registro</button>
+            <button onclick="irALogin(); toggleMobileMenu();" class="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-escom-600 hover:bg-slate-50">Login</button>
+            <button onclick="irAAgendar(); toggleMobileMenu();" class="block w-full text-center mt-4 bg-escom-600 text-white px-3 py-2 rounded-md text-base font-bold">Agendar Cita</button>
+            <button id="btn-logout-mobile" onclick="cerrarSesion(); toggleMobileMenu();" class="hidden w-full text-center mt-2 bg-slate-900 text-white px-3 py-2 rounded-md text-base font-bold">Cerrar sesión</button>
+        </div>
+    </nav>
+
+    <main class="flex-grow flex flex-col">
+
+        <section id="home" class="view-section active flex-grow">
+            <div class="relative bg-escom-50 overflow-hidden">
+                <div class="max-w-7xl mx-auto">
+                    <div class="relative z-10 pb-8 bg-escom-50 sm:pb-16 md:pb-20 lg:max-w-2xl lg:w-full lg:pb-28 xl:pb-32 pt-16 px-4 sm:px-6 lg:px-8">
+                        <main class="mt-10 mx-auto max-w-7xl sm:mt-12 md:mt-16 lg:mt-20 xl:mt-28 fade-in">
+                            <div class="sm:text-center lg:text-left">
+                                <span class="text-salud-600 font-bold tracking-wide uppercase text-sm mb-2 block">Sistema SGBD Periodo 26-2</span>
+                                <h1 class="text-4xl tracking-tight font-extrabold text-slate-900 sm:text-5xl md:text-6xl">
+                                    <span class="block xl:inline">Salud inteligente al</span>
+                                    <span class="block text-escom-600 xl:inline">alcance de tu mano</span>
+                                </h1>
+                                <p class="mt-3 text-base text-slate-500 sm:mt-5 sm:text-lg sm:max-w-xl sm:mx-auto md:mt-5 md:text-xl lg:mx-0">
+                                    Regístrate como paciente, inicia sesión y agenda tu consulta de forma segura.
+                                </p>
+                                <div class="mt-8 sm:flex sm:justify-center lg:justify-start gap-4">
+                                    <button onclick="irAAgendar()" class="w-full sm:w-auto flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-full text-white bg-escom-600 hover:bg-escom-800 md:py-4 md:text-lg md:px-10 shadow-xl transition">
+                                        Agendar Cita Ahora
+                                    </button>
+                                </div>
+                            </div>
+                        </main>
+                    </div>
+                </div>
+            </div>
+
+            <div id="seccion-directorio" class="bg-white py-16 sm:py-24">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="text-center">
+                        <h2 class="text-base font-semibold text-escom-600 tracking-wide uppercase">Cuerpo Médico Especializado</h2>
+                        <p class="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-slate-900 sm:text-4xl">Conoce a nuestros especialistas</p>
+                    </div>
+                    <div id="doctor-cards" class="mt-12 grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="registro" class="view-section py-12 bg-slate-50 flex-grow">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 fade-in">
+                <div class="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
+                    <div class="bg-escom-800 py-6 px-8 text-white">
+                        <h2 class="text-2xl font-bold">Registro de Paciente</h2>
+                        <p class="text-escom-100 text-sm mt-1">Crea tu cuenta antes de poder agendar una cita.</p>
+                    </div>
+
+                    <form id="form-registro" class="p-8 space-y-6" onsubmit="event.preventDefault(); registrarPaciente();">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-2">Nombre(s) *</label>
+                                <input type="text" id="reg-nombres" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-2">Apellido paterno *</label>
+                                <input type="text" id="reg-ap-paterno" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-2">Apellido materno *</label>
+                                <input type="text" id="reg-ap-materno" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-2">Fecha de nacimiento *</label>
+                                <input type="date" id="reg-fecha-nac" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-2">CURP *</label>
+                                <input type="text" id="reg-curp" maxlength="18" required class="w-full uppercase bg-slate-50 border border-slate-200 rounded-xl p-3">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-2">Género *</label>
+                                <select id="reg-genero" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3">
+                                    <option value="">Seleccione...</option>
+                                    <option>Masculino</option>
+                                    <option>Femenino</option>
+                                    <option>Otro</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-2">Tipo de sangre *</label>
+                                <select id="reg-tipo-sangre" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3">
+                                    <option value="">Seleccione...</option>
+                                    <option>O+</option><option>O-</option>
+                                    <option>A+</option><option>A-</option>
+                                    <option>B+</option><option>B-</option>
+                                    <option>AB+</option><option>AB-</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-2">Teléfono *</label>
+                                <input type="tel" id="reg-telefono" maxlength="10" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-semibold text-slate-700 mb-2">Correo electrónico *</label>
+                                <input type="email" id="reg-correo" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-2">Contraseña *</label>
+                                <input type="password" id="reg-contrasena" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-2">Confirmar contraseña *</label>
+                                <input type="password" id="reg-confirmar-contrasena" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full bg-escom-600 hover:bg-escom-800 text-white font-bold py-4 px-8 rounded-xl shadow-lg transition">
+                            Crear cuenta de paciente
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <section id="login" class="view-section py-12 bg-slate-50 flex-grow">
+            <div class="max-w-xl mx-auto px-4 sm:px-6 lg:px-8 fade-in">
+                <div class="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
+                    <div class="bg-escom-800 py-6 px-8 text-white">
+                        <h2 class="text-2xl font-bold">Inicio de sesión</h2>
+                        <p class="text-escom-100 text-sm mt-1">Solo pacientes autenticados pueden agendar citas.</p>
+                    </div>
+
+                    <form id="form-login" class="p-8 space-y-6" onsubmit="event.preventDefault(); iniciarSesion();">
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-2">Correo electrónico *</label>
+                            <input type="email" id="login-correo" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-2">Contraseña *</label>
+                            <input type="password" id="login-contrasena" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-2">Rol *</label>
+                            <select id="login-rol" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3">
+                                <option value="">Seleccione...</option>
+                                <option value="paciente">Paciente</option>
+                                <option value="doctor">Doctor</option>
+                                <option value="recepcionista">Recepcionista</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="w-full bg-escom-600 hover:bg-escom-800 text-white font-bold py-4 px-8 rounded-xl shadow-lg transition">
+                            Iniciar sesión
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <section id="agendar-cita" class="view-section py-12 bg-slate-50 flex-grow">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 fade-in">
+                <div class="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
+                    <div class="bg-escom-800 py-6 px-8 text-white">
+                        <h2 class="text-2xl font-bold">Portal de Agendamiento</h2>
+                        <p class="text-escom-100 text-sm mt-1">Disponible solo para pacientes con sesión iniciada.</p>
+                    </div>
+
+                    <div class="px-8 pt-6">
+                        <div class="bg-blue-50 border border-blue-100 rounded-2xl p-4 text-sm text-blue-800">
+                            Paciente autenticado: <span id="nombre-paciente-agenda" class="font-bold">Sin sesión</span>
+                        </div>
+                    </div>
+
+                    <form id="form-cita" class="p-8 space-y-8" onsubmit="event.preventDefault(); procesarCita();">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="especialidad" class="block text-sm font-semibold text-slate-700 mb-2">Especialidad *</label>
+                                <select id="especialidad" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3" onchange="cargarDoctores()">
+                                    <option value="">Seleccione una especialidad</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label for="doctor" class="block text-sm font-semibold text-slate-700 mb-2">Doctor disponible *</label>
+                                <select id="doctor" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3" onchange="cargarHorarios()">
+                                    <option value="">Seleccione un doctor</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label for="fecha-cita" class="block text-sm font-semibold text-slate-700 mb-2">Fecha de cita *</label>
+                                <input type="date" id="fecha-cita" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3" onchange="cargarHorarios()">
+                            </div>
+
+                            <div>
+                                <label for="hora-cita" class="block text-sm font-semibold text-slate-700 mb-2">Horario disponible *</label>
+                                <select id="hora-cita" required class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3">
+                                    <option value="">Seleccione primero doctor y fecha</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-3">
+                            <h3 class="text-lg font-bold text-slate-900">Resumen de la cita</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-slate-600">
+                                <p><span class="font-semibold text-slate-800">Costo estimado:</span> <span id="resumen-costo">$0.00 MXN</span></p>
+                                <p><span class="font-semibold text-slate-800">Límite de pago:</span> 8 horas después de generar la cita</p>
+                                <p><span class="font-semibold text-slate-800">Consultorio:</span> <span id="resumen-consultorio">Por definir</span></p>
+                                <p><span class="font-semibold text-slate-800">Estado inicial:</span> Pendiente de pago</p>
+                                <p class="md:col-span-2">
+                                    <span class="font-semibold text-slate-800">Política de cancelación:</span>
+                                    100% con 48 horas o más, 50% con 24 horas, 0% con menos de 24 horas.
+                                </p>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full bg-escom-600 hover:bg-escom-800 text-white font-bold py-4 px-8 rounded-xl shadow-lg transition">
+                            Confirmar cita
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <section id="comprobante" class="view-section py-12 bg-slate-50 flex-grow">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 fade-in">
+                <div class="bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b pb-6 mb-6">
+                        <div>
+                            <h2 class="text-3xl font-extrabold text-slate-900">Comprobante de cita</h2>
+                            <p class="text-slate-500 text-sm mt-1">Resumen generado tras una cita válida.</p>
+                        </div>
+                        <div class="px-4 py-2 rounded-full bg-amber-100 text-amber-800 text-sm font-bold">
+                            Pendiente de pago
+                        </div>
+                    </div>
+
+                    <div id="comprobante-contenido" class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm"></div>
+
+                    <div class="mt-8 flex flex-col sm:flex-row gap-4">
+                        <button onclick="window.print()" class="flex-1 bg-slate-900 text-white font-bold py-3 px-6 rounded-xl">
+                            Imprimir comprobante
+                        </button>
+                        <button onclick="navigate('portal-paciente')" class="flex-1 bg-escom-600 text-white font-bold py-3 px-6 rounded-xl">
+                            Ir a mi historial
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="portal-paciente" class="view-section py-12 bg-slate-50 flex-grow">
+            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 fade-in">
+                <div class="bg-white rounded-3xl p-8 shadow-sm border border-slate-100 flex flex-col md:flex-row items-center gap-6 mb-8">
+                    <div class="w-24 h-24 bg-escom-600 rounded-full flex items-center justify-center text-white text-3xl font-bold" id="avatar-paciente">--</div>
+                    <div class="flex-1 text-center md:text-left">
+                        <div class="inline-block px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full mb-2">Paciente autenticado</div>
+                        <h2 id="nombre-portal-paciente" class="text-3xl font-extrabold text-slate-900">Sin sesión iniciada</h2>
+                        <p id="correo-portal-paciente" class="text-slate-500 mt-1">Inicia sesión para consultar tu historial.</p>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
+                    <div class="flex items-center justify-between gap-4 flex-wrap mb-6 border-b pb-4">
+                        <h3 class="text-xl font-bold text-slate-900">Mis citas agendadas</h3>
+                        <button onclick="irAAgendar()" class="bg-escom-600 text-white px-5 py-2 rounded-xl font-semibold">
+                            Nueva cita
+                        </button>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-slate-200">
+                            <thead>
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase">Folio</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase">Especialidad</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase">Doctor</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase">Fecha / Hora</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase">Consultorio</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase">Monto</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase">Estatus</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-citas" class="divide-y divide-slate-100">
+                                <tr>
+                                    <td class="px-4 py-4 text-sm text-slate-500" colspan="7">No hay citas registradas.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-slate-900 text-slate-300 py-10 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div>
+                <span class="font-bold text-xl text-white">Hospital<span class="text-escom-500">ESCOM</span></span>
+                <p class="text-sm text-slate-400 mt-2">Base frontend con acceso restringido por sesión.</p>
+            </div>
+            <div class="md:text-right text-sm">Equipo 1 - Bases de Datos (Periodo 26-2)</div>
+        </div>
+    </footer>
+
+    <script>
+        const especialidades = [
+            { id: 1, nombre: "Cardiología", precio: 900 },
+            { id: 2, nombre: "Dermatología", precio: 750 },
+            { id: 3, nombre: "Ginecología", precio: 800 },
+            { id: 4, nombre: "Medicina General", precio: 500 },
+            { id: 5, nombre: "Nefrología", precio: 950 },
+            { id: 6, nombre: "Nutriología", precio: 650 },
+            { id: 7, nombre: "Oftalmología", precio: 850 },
+            { id: 8, nombre: "Oncología", precio: 1200 },
+            { id: 9, nombre: "Ortopedia", precio: 950 },
+            { id: 10, nombre: "Pediatría", precio: 700 }
+        ];
+
+        const doctores = [
+            { id: 1, nombre: "Dr. Alejandro Pérez", especialidadId: 1, consultorio: "A-201" },
+            { id: 2, nombre: "Dra. Sofia Herrera", especialidadId: 1, consultorio: "A-202" },
+            { id: 3, nombre: "Dr. Eduardo Luna", especialidadId: 2, consultorio: "B-101" },
+            { id: 4, nombre: "Dra. Michelle Tolentino", especialidadId: 2, consultorio: "B-105" },
+            { id: 5, nombre: "Dra. Fernanda Ruiz", especialidadId: 3, consultorio: "C-102" },
+            { id: 6, nombre: "Dr. Marco León", especialidadId: 4, consultorio: "C-201" },
+            { id: 7, nombre: "Dr. Iván Castillo", especialidadId: 5, consultorio: "D-210" },
+            { id: 8, nombre: "Dra. Paola Méndez", especialidadId: 6, consultorio: "D-110" },
+            { id: 9, nombre: "Dr. Luis Ramírez", especialidadId: 7, consultorio: "E-120" },
+            { id: 10, nombre: "Dra. Andrea Soto", especialidadId: 8, consultorio: "F-301" },
+            { id: 11, nombre: "Dr. Jorge Navarro", especialidadId: 9, consultorio: "G-115" },
+            { id: 12, nombre: "Dra. Karla Campos", especialidadId: 10, consultorio: "H-104" }
+        ];
+
+        const horariosBase = ["09:00", "10:00", "11:00", "12:00", "16:00", "17:00"];
+
+        let pacientesRegistrados = [];
+        let pacienteAutenticado = null;
+        let citasGeneradas = [];
+
+        function navigate(viewId, scrollToId = null) {
+            const targetSection = document.getElementById(viewId);
+            if (!targetSection) return;
+
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            targetSection.classList.add('active');
+
+            if (scrollToId && document.getElementById(scrollToId)) {
+                setTimeout(() => {
+                    document.getElementById(scrollToId).scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+            } else {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function toggleMobileMenu() {
+            document.getElementById('mobile-menu').classList.toggle('hidden');
+        }
+
+        function renderDoctorCards() {
+            const container = document.getElementById("doctor-cards");
+            container.innerHTML = "";
+
+            doctores.slice(0, 8).forEach((doc) => {
+                const especialidad = especialidades.find(e => e.id === doc.especialidadId);
+                container.innerHTML += `
+                    <div class="bg-slate-50 rounded-2xl p-6 border border-slate-100 shadow-sm hover:shadow-xl transition transform hover:-translate-y-1">
+                        <div class="w-20 h-20 bg-slate-300 rounded-full mx-auto mb-4 border-4 border-white shadow-inner flex items-center justify-center text-slate-500 font-bold text-2xl">
+                            ${doc.nombre.split(" ").map(n => n[0]).slice(0,2).join("")}
+                        </div>
+                        <h3 class="text-lg font-bold text-center text-slate-900">${doc.nombre}</h3>
+                        <p class="text-sm text-center text-escom-600 font-medium mb-4">${especialidad.nombre}</p>
+                        <button onclick="preseleccionarDoctor(${doc.especialidadId}, ${doc.id})" class="w-full bg-white border-2 border-escom-100 text-escom-600 hover:bg-escom-50 font-semibold py-2 rounded-xl text-sm transition">
+                            Ver disponibilidad
+                        </button>
+                    </div>
+                `;
+            });
+        }
+
+        function cargarEspecialidades() {
+            const select = document.getElementById("especialidad");
+            select.innerHTML = `<option value="">Seleccione una especialidad</option>`;
+
+            especialidades.forEach(esp => {
+                const option = document.createElement("option");
+                option.value = esp.id;
+                option.textContent = esp.nombre;
+                select.appendChild(option);
+            });
+        }
+
+        function cargarDoctores() {
+            const especialidadId = parseInt(document.getElementById("especialidad").value);
+            const doctorSelect = document.getElementById("doctor");
+            const horaSelect = document.getElementById("hora-cita");
+
+            doctorSelect.innerHTML = `<option value="">Seleccione un doctor</option>`;
+            horaSelect.innerHTML = `<option value="">Seleccione primero doctor y fecha</option>`;
+
+            const filtrados = doctores.filter(doc => doc.especialidadId === especialidadId);
+
+            filtrados.forEach(doc => {
+                const option = document.createElement("option");
+                option.value = doc.id;
+                option.textContent = doc.nombre;
+                doctorSelect.appendChild(option);
+            });
+
+            actualizarResumen();
+        }
+
+        function cargarHorarios() {
+            const fecha = document.getElementById("fecha-cita").value;
+            const doctorId = parseInt(document.getElementById("doctor").value);
+            const horaSelect = document.getElementById("hora-cita");
+
+            horaSelect.innerHTML = "";
+
+            if (!fecha || !doctorId) {
+                horaSelect.innerHTML = `<option value="">Seleccione primero doctor y fecha</option>`;
+                return;
+            }
+
+            const horariosOcupados = citasGeneradas
+                .filter(c => c.fecha === fecha && c.doctorId === doctorId && (c.estatus === "Pendiente de pago" || c.estatus === "Pagada pendiente por atender"))
+                .map(c => c.hora);
+
+            const disponibles = horariosBase.filter(h => !horariosOcupados.includes(h));
+
+            if (disponibles.length === 0) {
+                horaSelect.innerHTML = `<option value="">No hay horarios disponibles</option>`;
+                return;
+            }
+
+            disponibles.forEach(hora => {
+                const option = document.createElement("option");
+                option.value = hora;
+                option.textContent = hora;
+                horaSelect.appendChild(option);
+            });
+        }
+
+        function configurarFechaMinMax() {
+            const fechaInput = document.getElementById("fecha-cita");
+            const ahora = new Date();
+            const minDate = new Date(ahora.getTime() + 48 * 60 * 60 * 1000);
+            const maxDate = new Date(ahora.getTime() + 90 * 24 * 60 * 60 * 1000);
+
+            fechaInput.min = minDate.toISOString().split("T")[0];
+            fechaInput.max = maxDate.toISOString().split("T")[0];
+        }
+
+        function actualizarResumen() {
+            const especialidadId = parseInt(document.getElementById("especialidad").value);
+            const doctorId = parseInt(document.getElementById("doctor").value);
+
+            const especialidad = especialidades.find(e => e.id === especialidadId);
+            const doctor = doctores.find(d => d.id === doctorId);
+
+            document.getElementById("resumen-costo").textContent = especialidad ? `$${especialidad.precio.toFixed(2)} MXN` : "$0.00 MXN";
+            document.getElementById("resumen-consultorio").textContent = doctor ? doctor.consultorio : "Por definir";
+        }
+
+        
+async function registrarPaciente() {
+
+    const datos = new FormData();
+
+    datos.append("nombres", document.getElementById("reg-nombres").value);
+    datos.append("ap_paterno", document.getElementById("reg-ap-paterno").value);
+    datos.append("ap_materno", document.getElementById("reg-ap-materno").value);
+    datos.append("fecha_nacimiento", document.getElementById("reg-fecha-nac").value);
+    datos.append("curp", document.getElementById("reg-curp").value);
+    datos.append("genero", document.getElementById("reg-genero").value);
+    datos.append("tipo_sangre", document.getElementById("reg-tipo-sangre").value);
+    datos.append("contrasena", document.getElementById("reg-contrasena").value);
+
+    const respuesta = await fetch("registrar.php", {
+        method: "POST",
+        body: datos
+    });
+
+    const resultado = await respuesta.text();
+
+    alert(resultado);
+
+    document.getElementById("form-registro").reset();
+}
+
+
+        
+async function iniciarSesion() {
+
+    const datos = new FormData();
+
+    datos.append("curp", document.getElementById("login-correo").value);
+    datos.append("contrasena", document.getElementById("login-contrasena").value);
+
+    const respuesta = await fetch("login.php", {
+        method: "POST",
+        body: datos
+    });
+
+    const resultado = await respuesta.json();
+
+    if (resultado.success) {
+
+        pacienteAutenticado = {
+            idPaciente: resultado.id,
+            nombres: resultado.nombre
+        };
+
+        actualizarUIAutenticacion();
+
+        alert("Inicio de sesión exitoso");
+
+        navigate("portal-paciente");
+
+    } else {
+
+        alert("CURP o contraseña incorrectos");
+
+    }
+}
+
+
+        function cerrarSesion() {
+            pacienteAutenticado = null;
+            actualizarUIAutenticacion();
+            navigate("home");
+            alert("Sesión cerrada correctamente.");
+        }
+
+        function actualizarUIAutenticacion() {
+            const btnLogout = document.getElementById("btn-logout");
+            const btnLogoutMobile = document.getElementById("btn-logout-mobile");
+            const nombreAgenda = document.getElementById("nombre-paciente-agenda");
+            const nombrePortal = document.getElementById("nombre-portal-paciente");
+            const correoPortal = document.getElementById("correo-portal-paciente");
+            const avatar = document.getElementById("avatar-paciente");
+
+            if (pacienteAutenticado) {
+                btnLogout.classList.remove("hidden");
+                btnLogoutMobile.classList.remove("hidden");
+
+                const nombreCompleto = `${pacienteAutenticado.nombres} ${pacienteAutenticado.apPaterno} ${pacienteAutenticado.apMaterno}`;
+                nombreAgenda.textContent = nombreCompleto;
+                nombrePortal.textContent = nombreCompleto;
+                correoPortal.textContent = pacienteAutenticado.correo;
+                avatar.textContent = `${pacienteAutenticado.nombres[0] || ''}${pacienteAutenticado.apPaterno[0] || ''}`.toUpperCase();
+            } else {
+                btnLogout.classList.add("hidden");
+                btnLogoutMobile.classList.add("hidden");
+                nombreAgenda.textContent = "Sin sesión";
+                nombrePortal.textContent = "Sin sesión iniciada";
+                correoPortal.textContent = "Inicia sesión para consultar tu historial.";
+                avatar.textContent = "--";
+                renderTablaCitas();
+            }
+        }
+
+        function irALogin() {
+            navigate("login");
+        }
+
+        function irAAgendar() {
+            if (!pacienteAutenticado) {
+                alert("Debes registrarte o iniciar sesión como paciente antes de agendar una cita.");
+                navigate("login");
+                return;
+            }
+
+            document.getElementById("nombre-paciente-agenda").textContent =
+                `${pacienteAutenticado.nombres} ${pacienteAutenticado.apPaterno} ${pacienteAutenticado.apMaterno}`;
+            navigate("agendar-cita");
+        }
+
+        function preseleccionarDoctor(especialidadId, doctorId) {
+            if (!pacienteAutenticado) {
+                alert("Debes iniciar sesión como paciente para continuar con el agendamiento.");
+                navigate("login");
+                return;
+            }
+
+            navigate('agendar-cita');
+            document.getElementById("especialidad").value = especialidadId;
+            cargarDoctores();
+            document.getElementById("doctor").value = doctorId;
+            actualizarResumen();
+            cargarHorarios();
+        }
+
+        function generarFolio() {
+            return "CIT-" + String(citasGeneradas.length + 1).padStart(3, "0");
+        }
+
+        function generarLineaPago() {
+            return "LP-" + Math.random().toString(36).substring(2, 10).toUpperCase();
+        }
+
+        function procesarCita() {
+            if (!pacienteAutenticado) {
+                alert("No puedes agendar una cita sin iniciar sesión.");
+                navigate("login");
+                return;
+            }
+
+            const especialidadId = parseInt(document.getElementById("especialidad").value);
+            const doctorId = parseInt(document.getElementById("doctor").value);
+            const fecha = document.getElementById("fecha-cita").value;
+            const hora = document.getElementById("hora-cita").value;
+
+            if (!especialidadId || !doctorId || !fecha || !hora) {
+                alert("Completa todos los campos obligatorios.");
+                return;
+            }
+
+            const ahora = new Date();
+            const fechaHoraCita = new Date(`${fecha}T${hora}:00`);
+            const diferenciaHoras = (fechaHoraCita - ahora) / (1000 * 60 * 60);
+
+            if (diferenciaHoras < 48) {
+                alert("No es posible agendar una cita con menos de 48 horas de anticipación.");
+                return;
+            }
+
+            if (diferenciaHoras > 24 * 90) {
+                alert("No es posible agendar una cita con más de 3 meses de anticipación.");
+                return;
+            }
+
+            const yaTieneActiva = citasGeneradas.some(c =>
+                c.idPaciente === pacienteAutenticado.idPaciente &&
+                c.doctorId === doctorId &&
+                c.fecha === fecha &&
+                c.hora === hora &&
+                (c.estatus === "Pendiente de pago" || c.estatus === "Pagada pendiente por atender")
+            );
+
+            if (yaTieneActiva) {
+                alert("Ya tienes una cita activa con ese doctor en ese mismo horario.");
+                return;
+            }
+
+            const doctorOcupado = citasGeneradas.some(c =>
+                c.doctorId === doctorId &&
+                c.fecha === fecha &&
+                c.hora === hora &&
+                (c.estatus === "Pendiente de pago" || c.estatus === "Pagada pendiente por atender")
+            );
+
+            if (doctorOcupado) {
+                alert("El doctor ya tiene una cita en ese horario.");
+                return;
+            }
+
+            const especialidad = especialidades.find(e => e.id === especialidadId);
+            const doctor = doctores.find(d => d.id === doctorId);
+
+            const nuevaCita = {
+                idPaciente: pacienteAutenticado.idPaciente,
+                paciente: `${pacienteAutenticado.nombres} ${pacienteAutenticado.apPaterno} ${pacienteAutenticado.apMaterno}`,
+                folio: generarFolio(),
+                doctorId,
+                especialidad: especialidad.nombre,
+                doctor: doctor.nombre,
+                fecha,
+                hora,
+                consultorio: doctor.consultorio,
+                monto: especialidad.precio,
+                lineaPago: generarLineaPago(),
+                fechaLimite: "8 horas posteriores al registro",
+                estatus: "Pendiente de pago"
+            };
+
+            citasGeneradas.push(nuevaCita);
+            renderTablaCitas();
+            renderComprobante(nuevaCita);
+            navigate("comprobante");
+        }
+
+        function renderComprobante(cita) {
+            const contenedor = document.getElementById("comprobante-contenido");
+            contenedor.innerHTML = `
+                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5">
+                    <p class="text-xs uppercase tracking-wide text-slate-500 font-bold">Folio de cita</p>
+                    <p class="text-lg font-bold text-slate-900 mt-1">${cita.folio}</p>
+                </div>
+                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5">
+                    <p class="text-xs uppercase tracking-wide text-slate-500 font-bold">Línea de pago</p>
+                    <p class="text-lg font-bold text-slate-900 mt-1">${cita.lineaPago}</p>
+                </div>
+                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5">
+                    <p class="text-xs uppercase tracking-wide text-slate-500 font-bold">Paciente</p>
+                    <p class="text-lg font-bold text-slate-900 mt-1">${cita.paciente}</p>
+                </div>
+                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5">
+                    <p class="text-xs uppercase tracking-wide text-slate-500 font-bold">Especialidad</p>
+                    <p class="text-lg font-bold text-slate-900 mt-1">${cita.especialidad}</p>
+                </div>
+                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5">
+                    <p class="text-xs uppercase tracking-wide text-slate-500 font-bold">Doctor</p>
+                    <p class="text-lg font-bold text-slate-900 mt-1">${cita.doctor}</p>
+                </div>
+                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5">
+                    <p class="text-xs uppercase tracking-wide text-slate-500 font-bold">Consultorio</p>
+                    <p class="text-lg font-bold text-slate-900 mt-1">${cita.consultorio}</p>
+                </div>
+                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5">
+                    <p class="text-xs uppercase tracking-wide text-slate-500 font-bold">Fecha</p>
+                    <p class="text-lg font-bold text-slate-900 mt-1">${cita.fecha}</p>
+                </div>
+                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5">
+                    <p class="text-xs uppercase tracking-wide text-slate-500 font-bold">Hora</p>
+                    <p class="text-lg font-bold text-slate-900 mt-1">${cita.hora}</p>
+                </div>
+                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5 md:col-span-2">
+                    <p class="text-xs uppercase tracking-wide text-slate-500 font-bold">Pago y política</p>
+                    <p class="text-base text-slate-700 mt-1">
+                        Monto: <span class="font-bold">$${cita.monto.toFixed(2)} MXN</span><br>
+                        Límite de pago: ${cita.fechaLimite}<br>
+                        Cancelación: 100% con 48h o más, 50% con 24h, 0% con menos de 24h.
+                    </p>
+                </div>
+            `;
+        }
+
+        function renderTablaCitas() {
+            const tabla = document.getElementById("tabla-citas");
+
+            if (!pacienteAutenticado) {
+                tabla.innerHTML = `
+                    <tr>
+                        <td class="px-4 py-4 text-sm text-slate-500" colspan="7">Debes iniciar sesión para visualizar tus citas.</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            const citasPaciente = citasGeneradas.filter(c => c.idPaciente === pacienteAutenticado.idPaciente);
+
+            if (citasPaciente.length === 0) {
+                tabla.innerHTML = `
+                    <tr>
+                        <td class="px-4 py-4 text-sm text-slate-500" colspan="7">No hay citas registradas para esta cuenta.</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tabla.innerHTML = citasPaciente.map(cita => `
+                <tr>
+                    <td class="px-4 py-4 text-sm font-bold text-slate-900">${cita.folio}</td>
+                    <td class="px-4 py-4 text-sm">${cita.especialidad}</td>
+                    <td class="px-4 py-4 text-sm">${cita.doctor}</td>
+                    <td class="px-4 py-4 text-sm">${cita.fecha}<br><span class="text-slate-500">${cita.hora}</span></td>
+                    <td class="px-4 py-4 text-sm">${cita.consultorio}</td>
+                    <td class="px-4 py-4 text-sm">$${cita.monto.toFixed(2)}</td>
+                    <td class="px-4 py-4">
+                        <span class="px-3 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-800">${cita.estatus}</span>
+                    </td>
+                </tr>
+            `).join("");
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            renderDoctorCards();
+            cargarEspecialidades();
+            configurarFechaMinMax();
+            document.getElementById("especialidad").addEventListener("change", actualizarResumen);
+            document.getElementById("doctor").addEventListener("change", actualizarResumen);
+            actualizarUIAutenticacion();
+        });
+    </script>
+</body>
+</html>
